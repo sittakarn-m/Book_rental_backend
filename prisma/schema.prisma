@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String    @unique
+  userName    String    @unique
+  password    String
+  phone       String?
+  address     String
+  street      String
+  zipCode     String
+  memberStart DateTime  @default(now())
+  avatar      String?
+  enabled     Boolean   @default(true)
+  role        Role      @default(USER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  orders  Order[]
+  carts   Cart[]
+  rentals Rental[]
+}
+
+model Rental {
+  id             Int          @id @default(autoincrement())
+  rentalDate     DateTime     @default(now())
+  returnDate     DateTime?
+  totalPrice     Float
+  status         RentalStatus @default(PENDING)
+  trackingNumber String?
+
+  userId       Int
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId       Int
+  book         Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  BookOnRental BookOnRental[]
+}
+
+model Book {
+  id          Int        @id @default(autoincrement())
+  title       String
+  author      String
+  publisher   String
+  detail      String?
+  pricePerDay Float
+  coverImage  Image[]
+  stock       Int        @default(1) // จำนวนหนังสือที่มีในระบบ
+  status      BookStatus @default(AVAILABLE)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  rentals    Rental[]
+  orderItems BookOnOrder[]
+  cartItems  BookOnRental[]
+  BookOnCart BookOnCart[]
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  books Book[]
+}
+
+model Cart {
+  id           Int            @id @default(autoincrement())
+  cartTotal    Float
+  orderedBy    User           @relation(fields: [orderedById], references: [id], onDelete: Cascade)
+  orderedById  Int
+  books        BookOnCart[]
+  BookOnRental BookOnRental[]
+}
+
+model BookOnCart {
+  id     Int   @id @default(autoincrement())
+  count  Int
+  price  Float
+  book   Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId Int
+  cart   Cart  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId Int
+}
+
+model BookOnRental {
+  id    Int   @id @default(autoincrement())
+  count Int
+  price Float
+
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  rentalId Int
+  book     Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId   Int
+  Cart     Cart?  @relation(fields: [cartId], references: [id])
+  cartId   Int?
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  cartTotal   Float
+  orderStatus String   @default("Not process")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderedBy   User @relation(fields: [orderedById], references: [id], onDelete: Cascade)
+  orderedById Int
+
+  books BookOnOrder[]
+}
+
+model BookOnOrder {
+  id    Int   @id @default(autoincrement())
+  count Int
+  price Float
+
+  book    Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId  Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId Int
+}
+
+model Image {
+  id         Int    @id @default(autoincrement())
+  asset_id   String
+  public_id  String
+  url        String
+  secure_url String
+
+  book   Book? @relation(fields: [bookId], references: [id])
+  bookId Int?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookStatus {
+  AVAILABLE // พร้อมให้ยืม
+  RENTED // กำลังถูกยืม
+  RETURNING // กำลังส่งคืน
+}
+
+enum RentalStatus {
+  PENDING // รอหนังสือจัดส่ง
+  ACTIVE // หนังสือถึงมือผู้ยืมแล้ว
+  RETURNING // ผู้ยืมส่งคืนแล้ว
+  SUCCESS // คืนหนังสือเรียบร้อย
+}
