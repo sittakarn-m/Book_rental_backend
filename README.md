@@ -19,9 +19,10 @@
 | `/user/book`                             | GET    | Get all books, category | None                        |
 | `/user/book/:id`                         | GET    | Get book detail         | None                        |
 | `/user/cart`                             | GET    | Get book in Cart        | None                        |
+| `/user/cart`                             | PUT    | PUT book in Cart        | None                        |
 | `/user/cart`                             | POST   | Add book in Cart        | None                        |
-| `/user/cart/:bookId`                     | DELETE | Remove book in Cart     | None                        |
-| `/user/cart/checkout`                    | POST   | Checkout                | None                        |
+| `/user/cart/`                            | DELETE | Remove book in Cart     | None                        |
+| `/user/checkout`                    | POST   | Checkout                | None                        |
 | `/user/orders`                           | GET    | List of orders          | None                        |
 | `/user/orders/:orderId`                  | GET    | Rental detail           | None                        |
 | `/user/orders/:orderId/status`           | GET    | Book Status             | None                        |

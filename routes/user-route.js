@@ -8,19 +8,23 @@ const {
   saveAddress,
   getMe,
   getUserCart,
-  removeBookOnCart,
+  addToCart,
+  getCart,
+  updateCartItem,
+  removeFromCart,
+  checkout,
 } = require("../controllers/user-controller");
-const { authCheck, adminCheck } = require("../middlewares/auth-middleware");
+const { authCheck } = require("../middlewares/auth-middleware");
 
 // Cart
-router.get("/cart", authCheck, getUserCart);
-router.post("/cart", authCheck, userCart);
-router.delete("/cart", authCheck, emptyCart);
+router.get("/cart", authCheck, getCart);
+router.post("/cart", authCheck, addToCart);
+router.put("/cart", authCheck, updateCartItem);
+router.delete("/cart", authCheck, removeFromCart);
+router.post("/checkout", authCheck, checkout);
 
 // User info
 router.get("/me", authCheck, getMe);
 router.post("/address", authCheck, saveAddress);
-router.post("/order", authCheck, saveOrder);
-router.get("/order", authCheck, getOrder);
 
 module.exports = router;
