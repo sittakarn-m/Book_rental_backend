@@ -12,16 +12,12 @@ const {
 } = require("../controllers/user-controller");
 const { authCheck, adminCheck } = require("../middlewares/auth-middleware");
 
-// router.get("/", authCheck, adminCheck, listUsers);
-
-
-
+// Cart
 router.get("/cart", authCheck, getUserCart);
 router.post("/cart", authCheck, userCart);
-// router.delete("/cart", authCheck, removeBookOnCart);
 router.delete("/cart", authCheck, emptyCart);
 
-
+// User info
 router.get("/me", authCheck, getMe);
 router.post("/address", authCheck, saveAddress);
 router.post("/order", authCheck, saveOrder);

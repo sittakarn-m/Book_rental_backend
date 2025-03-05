@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 // Verify Token Middleware
 exports.authCheck = async (req, res, next) => {
   try {
+    console.log("Authorization Header:", req.headers.authorization);
+
     const authorization = req.headers.authorization;
     if (!authorization) {
       return next(createError(401, "Authorization missing"));

@@ -1,17 +1,14 @@
 const prisma = require("../configs/prismaClient");
+const multer = require("multer");
+const cloundinary = require('../utils/cloudinaryConfig')
 
 exports.create = async (req, res) => {
   try {
-    const {
-      title,
-      author,
-      publisher,
-      detail,
-      pricePerDay,
-      coverImage,
-      stock,
-      categoryId,
-    } = req.body;
+    const { title, author, publisher, detail, pricePerDay, stock, categoryId } =
+      req.body;
+
+    // If there's a file, extract it from multer
+    const coverImage = req.file ? req.file.filename : null;
 
     const book = await prisma.book.create({
       data: {
@@ -20,14 +17,15 @@ exports.create = async (req, res) => {
         publisher,
         detail,
         pricePerDay: parseFloat(pricePerDay),
-        coverImage: coverImage ? { create: [{ url: coverImage }] } : undefined,
         stock: parseInt(stock),
         categoryId: parseInt(categoryId),
+        coverImage: coverImage ? { create: [{ url: coverImage }] } : undefined,
       },
     });
     res.json({ message: "Hello create book" });
   } catch (error) {
-    next(error)
+    console.log(error);
+    res.status(500).json({ error });
   }
 };
 
@@ -66,7 +64,7 @@ exports.read = async (req, res) => {
 
     res.json(books);
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -112,7 +110,7 @@ exports.update = async (req, res) => {
 
     res.json({ message: "Book updated successfully", book });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -127,7 +125,7 @@ exports.remove = async (req, res) => {
 
     res.json({ message: "Delete item success" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -144,11 +142,9 @@ exports.listBy = async (req, res) => {
 
     res.json(books);
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
-
-
 
 const handleQuery = async (req, res, query) => {
   try {
@@ -238,10 +234,12 @@ exports.searchFilter = async (req, res) => {
 
     // If no results found after filtering, return a message
     if (Array.isArray(results) && results.length === 0) {
-      return res.status(404).json({ message: "No books match the search criteria" });
+      return res
+        .status(404)
+        .json({ message: "No books match the search criteria" });
     }
 
-    res.json(results)
+    res.json(results);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });

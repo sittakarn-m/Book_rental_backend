@@ -7,9 +7,10 @@ const { errorMiddleware } = require("./middlewares/errorMiddleware");
 const authRoute = require("./routes/auth-route");
 const categoryRoute = require("./routes/category-route");
 const bookRoute = require("./routes/book-route");
-const userRoute = require('./routes/user-route')
-const adminRoute = require('./routes/admin-route')
+const userRoute = require("./routes/user-route");
+const adminRoute = require("./routes/admin-route");
 const prisma = require("./configs/prismaClient");
+const multer = require("multer");
 
 const app = express();
 
@@ -34,7 +35,6 @@ app.use("/category", categoryRoute);
 
 // Product
 app.use("/book", bookRoute);
-
 
 // not found
 app.use(notFound);
