@@ -98,6 +98,8 @@ exports.addToCart = async (req, res) => {
     const { bookId, count } = req.body;
     const userId = req.user.id;
 
+    console.log(" Data received from frontend:", { bookId, count, userId });
+
     let cart = await prisma.cart.findFirst({
       where: {
         orderedById: userId,
@@ -119,9 +121,7 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ message: "Book not available" });
     }
 
-    // console.log("Cart ID:", cart.id);
-    // console.log("Book IDDDDDD:", bookId, "Count:", count);
-
+    // check existing book on cart
     const existingBookOnCart = await prisma.bookOnCart.findFirst({
       where: {
         cartId: cart.id,
@@ -145,8 +145,6 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    // console.log("BookOnCart:", bookOnCart);
-
     // update cartTotal
     let resultCartTotal = 0;
     const totalResult = await prisma.bookOnCart.findMany({
@@ -166,7 +164,7 @@ exports.addToCart = async (req, res) => {
 
     res.status(201).json({ message: "Add book to cart Success!!" });
   } catch (error) {
-    console.log(error);
+    console.error(" Error in addToCart:", error); // Enhanced logging
     res.status(500).json({ message: error.message });
   }
 };
@@ -187,30 +185,16 @@ exports.getCart = async (req, res) => {
 
     console.log("Cart Data:", cart);
 
-    if (!cart || cart.books.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Cart is empty or no items found" });
+    if (!cart) {
+      return res.json({ books: [], cartTotal: 0 });
     }
-
-    // update cartTotal
-
-    let resultCartTotal = 0;
-    const totalResult = await prisma.bookOnCart.findMany({
-      where: { cartId: cart.id },
-    });
-
-    for (const item of totalResult) {
-      resultCartTotal += item.price * item.count;
+    
+    // ถ้า cart มี แต่ไม่มี books
+    if (cart.books.length === 0) {
+      return res.json({ ...cart, books: [], cartTotal: 0 });
     }
-
-    if (cart.cartTotal !== resultCartTotal) {
-      await prisma.cart.update({
-        where: { id: cart.id },
-        data: { cartTotal: resultCartTotal },
-      });
-    }
-
+    
+    
     res.json(cart);
   } catch (error) {
     console.error("Error:", error);
@@ -222,37 +206,103 @@ exports.updateCartItem = async (req, res) => {
   try {
     const { bookOnCartId, count } = req.body;
 
-    await prisma.bookOnCart.update({
-      where: { id: bookOnCartId },
-      data: { count },
-    });
-
-    const checkStock = await prisma.bookOnCart.findFirst({
-      where: {
-        count,
-      },
-    });
-    console.log("Check stock:", checkStock.count);
-
-    if (checkStock.count <= 0) {
+    if (count <= 0) {
+      // ถ้า count <= 0 ลบทันที
       await prisma.bookOnCart.delete({
         where: { id: parseInt(bookOnCartId) },
       });
+
+      // อัปเดต cartTotal หลังจากลบ
+      const cartId = await prisma.bookOnCart.findUnique({
+        where: { id: parseInt(bookOnCartId) },
+        select: { cartId: true },
+      });
+
+      if (cartId) {
+        const cartBooks = await prisma.bookOnCart.findMany({
+          where: { cartId: cartId.cartId },
+        });
+
+        let newCartTotal = 0;
+        for (const item of cartBooks) {
+          newCartTotal += item.price * item.count;
+        }
+
+        await prisma.cart.update({
+          where: { id: cartId.cartId },
+          data: { cartTotal: newCartTotal },
+        });
+      }
+
+      return res.json({ message: "Item removed because count <= 0" });
     }
-    res.json({ message: "Updated success !!" });
+
+    // ถ้า count > 0 แค่อัปเดตจำนวน
+    await prisma.bookOnCart.update({
+      where: { id: parseInt(bookOnCartId) },
+      data: { count },
+    });
+
+    // อัปเดต cartTotal
+    const cartId = await prisma.bookOnCart.findUnique({
+      where: { id: parseInt(bookOnCartId) },
+      select: { cartId: true },
+    });
+
+    if (cartId) {
+      const cartBooks = await prisma.bookOnCart.findMany({
+        where: { cartId: cartId.cartId },
+      });
+
+      let newCartTotal = 0;
+      for (const item of cartBooks) {
+        newCartTotal += item.price * item.count;
+      }
+
+      await prisma.cart.update({
+        where: { id: cartId.cartId },
+        data: { cartTotal: newCartTotal },
+      });
+    }
+
+    res.json({ message: "Cart item updated" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.removeFromCart = async (req, res) => {
   try {
-    const { itemId } = req.body;
+    const { itemId } = req.params;
+
+    const bookOnCart = await prisma.bookOnCart.findUnique({
+      where: { id: parseInt(itemId) },
+      select: { cartId: true },
+    });
 
     await prisma.bookOnCart.delete({ where: { id: parseInt(itemId) } });
 
+    // อัปเดต cartTotal
+    if (bookOnCart) {
+      const cartBooks = await prisma.bookOnCart.findMany({
+        where: { cartId: bookOnCart.cartId },
+      });
+
+      let newCartTotal = 0;
+      for (const item of cartBooks) {
+        newCartTotal += item.price * item.count;
+      }
+
+      await prisma.cart.update({
+        where: { id: bookOnCart.cartId },
+        data: { cartTotal: newCartTotal },
+      });
+    }
+
     res.json({ message: "Remove item success !!" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };

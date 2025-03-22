@@ -8,6 +8,8 @@ const {
 
 const router = express.Router();
 
+// @ENDPOINT http://localhost:8899/auth
+
 // Register Route
 router.post("/register", validatorWithZod(registerSchema), register);
 

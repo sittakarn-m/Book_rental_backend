@@ -11,8 +11,11 @@ const userRoute = require("./routes/user-route");
 const adminRoute = require("./routes/admin-route");
 const prisma = require("./configs/prismaClient");
 const multer = require("multer");
+const { authCheck } = require("./middlewares/auth-middleware");
+const mockUser = require("./middlewares/mockUser");
 
 const app = express();
+app.use(mockUser);
 
 // Middlewares
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));

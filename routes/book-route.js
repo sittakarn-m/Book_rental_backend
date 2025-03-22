@@ -13,6 +13,7 @@ const { adminCheck, authCheck } = require("../middlewares/auth-middleware");
 const upload = require("../utils/multerConfig");
 
 // @ENDPOINT http://localhost:8899/book
+
 router.post("/", upload.single("coverImage"), create); // create product
 router.get("/list/", list); // Use query param (?count=10)
 router.put("/:id", update); // update product by id

@@ -3,44 +3,30 @@ const createError = require("../utils/createError");
 const jwt = require("jsonwebtoken");
 
 // Verify Token Middleware
-exports.authCheck = async (req, res, next) => {
-  try {
-    console.log("Authorization Header:", req.headers.authorization);
 
-    const authorization = req.headers.authorization;
-    if (!authorization) {
-      return next(createError(401, "Authorization missing"));
+exports.authCheck = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      throw createError(401, "Authorization missing");
     }
 
-    const token = authorization.split(" ")[1];
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      throw createError(401, "Authorization missing");
+    }
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        console.error("JWT Verification Error:", err.message);
-        return next(createError(403, "Invalid or expired token"));
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
 
-      // If role is missing, fetch from DB
-      if (!decoded.role) {
-        const user = await prisma.user.findUnique({
-          where: { id: decoded.id },
-          select: { role: true },
-        });
-
-        if (!user) {
-          return next(createError(401, "User not found"));
-        }
-
-        decoded.role = user.role;
-      }
-
-      req.user = decoded;
-      next();
-    });
+    next();
   } catch (error) {
-    next(error);
+    console.error("❌ AuthCheck Error:", error); // Add logging
+    res.status(401).json({ message: error.message });
   }
 };
+
 
 exports.adminCheck = (req, res, next) => {
   try {

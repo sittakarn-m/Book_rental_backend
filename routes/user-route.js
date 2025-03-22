@@ -16,12 +16,14 @@ const {
 } = require("../controllers/user-controller");
 const { authCheck } = require("../middlewares/auth-middleware");
 
+// @ENDPOINT http://localhost:8899/user
+
 // Cart
-router.get("/cart", authCheck, getCart);
-router.post("/cart", authCheck, addToCart);
-router.put("/cart", authCheck, updateCartItem);
-router.delete("/cart", authCheck, removeFromCart);
-router.post("/checkout", authCheck, checkout);
+router.get("/cart", getCart);
+router.post("/cart" , addToCart);
+router.put("/cart" , updateCartItem);
+router.delete("/cart/:itemId", removeFromCart);
+router.post("/checkout", checkout);
 
 // User info
 router.get("/me", authCheck, getMe);

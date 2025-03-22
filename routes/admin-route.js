@@ -3,6 +3,8 @@ const { listUsers, changeStatus, changeRole } = require("../controllers/admin-co
 const { authCheck, adminCheck } = require("../middlewares/auth-middleware");
 const router = express.Router();
 
+// @ENDPOINT http://localhost:8899/admin
+
 // User managenment
 router.put("/change-status", authCheck, adminCheck, changeStatus);
 router.put("/change-role", authCheck, adminCheck, changeRole);
