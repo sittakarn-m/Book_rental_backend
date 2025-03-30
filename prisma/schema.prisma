@@ -35,14 +35,18 @@ model Rental {
   id             Int          @id @default(autoincrement())
   rentalDate     DateTime     @default(now())
   returnDate     DateTime?
-  totalPrice     Float
-  status         RentalStatus @default(PENDING)
+  status         RentalStatus @default(ONSHELF)
   trackingNumber String?
 
-  userId       Int
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookId       Int
-  book         Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bookId Int
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: Cascade) // ✅ ต้องชื่อว่า "order"
+
   BookOnRental BookOnRental[]
 }
 
@@ -93,9 +97,9 @@ model BookOnCart {
 }
 
 model BookOnRental {
-  id    Int   @id @default(autoincrement())
+  id    Int    @id @default(autoincrement())
   count Int
-  price Float
+  price Float?
 
   rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
   rentalId Int
@@ -115,7 +119,8 @@ model Order {
   orderedBy   User @relation(fields: [orderedById], references: [id], onDelete: Cascade)
   orderedById Int
 
-  books BookOnOrder[]
+  books   BookOnOrder[]
+  rentals Rental[]
 }
 
 model BookOnOrder {
@@ -147,11 +152,12 @@ enum Role {
 
 enum BookStatus {
   AVAILABLE // พร้อมให้ยืม
-  RENTED // กำลังถูกยืม
-  RETURNING // กำลังส่งคืน
+  UNAVAILABLE
 }
 
 enum RentalStatus {
+  ONSHELF // ในร้านค้า
+  ONORDER // อยู่ในorder
   PENDING // รอหนังสือจัดส่ง
   ACTIVE // หนังสือถึงมือผู้ยืมแล้ว
   RETURNING // ผู้ยืมส่งคืนแล้ว

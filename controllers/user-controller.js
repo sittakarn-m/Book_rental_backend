@@ -188,13 +188,12 @@ exports.getCart = async (req, res) => {
     if (!cart) {
       return res.json({ books: [], cartTotal: 0 });
     }
-    
+
     // ถ้า cart มี แต่ไม่มี books
     if (cart.books.length === 0) {
       return res.json({ ...cart, books: [], cartTotal: 0 });
     }
-    
-    
+
     res.json(cart);
   } catch (error) {
     console.error("Error:", error);
@@ -311,7 +310,6 @@ exports.checkout = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    console.log("Test userId :", userId);
     const cart = await prisma.cart.findFirst({
       where: { orderedById: userId },
       include: { books: { include: { book: true } } },
@@ -321,31 +319,26 @@ exports.checkout = async (req, res) => {
       return res.status(400).json({ message: "Empty cart" });
     }
 
-    // console.log("Cartttttt:", cart);
-    // console.log("Books in Cart:", cart.books);
-
-    // check item in stock
+    //  ตรวจ stock
     for (const item of cart.books) {
       if (item.book.stock < item.count) {
         return res.status(400).json({
-          message: `Stock not enough for book: ${item.book.title}, in stock : ${item.book.stock}`,
+          message: `Stock not enough for book: ${item.book.title}, in stock: ${item.book.stock}`,
         });
       }
     }
 
-    // Update Stock
-    // console.log("Cart books:",cart.books)
+    //  ลด stock
     for (const item of cart.books) {
       await prisma.book.update({
         where: { id: item.bookId },
         data: {
-          stock: {
-            decrement: item.count,
-          },
+          stock: { decrement: item.count },
         },
       });
     }
 
+    //  สร้าง Order
     const order = await prisma.order.create({
       data: {
         orderedById: userId,
@@ -362,18 +355,40 @@ exports.checkout = async (req, res) => {
       },
     });
 
-    // console.log("Order rrrrrrrrrr", order)
+    //  สร้าง Rental สำหรับหนังสือแต่ละเล่ม
+    for (const item of cart.books) {
+      const returnDate = new Date();
+      returnDate.setDate(returnDate.getDate() + 7);
 
-    // Clear cart
+      await prisma.rental.create({
+        data: {
+          userId,
+          bookId: item.bookId,
+          orderId: order.id,
+          status: "ONORDER",
+          returnDate,
+          BookOnRental: {
+            create: {
+              count: item.count,
+              bookId: item.bookId,
+              cartId: cart.id,
+            },
+          },
+        },
+      });
+    }
+
+    //  ล้างตะกร้า
     await prisma.bookOnCart.deleteMany({ where: { cartId: cart.id } });
     await prisma.cart.update({
       where: { id: cart.id },
       data: { cartTotal: 0 },
     });
 
-    res.status(201).json(order);
+    res.status(201).json({ order, message: "Checkout success!" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Checkout error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 

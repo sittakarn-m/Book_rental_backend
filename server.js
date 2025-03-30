@@ -9,6 +9,7 @@ const categoryRoute = require("./routes/category-route");
 const bookRoute = require("./routes/book-route");
 const userRoute = require("./routes/user-route");
 const adminRoute = require("./routes/admin-route");
+const orderRoute = require("./routes/order-router");
 const prisma = require("./configs/prismaClient");
 const multer = require("multer");
 const { authCheck } = require("./middlewares/auth-middleware");
@@ -24,20 +25,14 @@ app.use(express.json());
 
 //// Routing ////
 
-// Auth
 app.use("/auth", authRoute);
-
-// Users api
 app.use("/user", userRoute);
-
-// Admin api
 app.use("/admin", adminRoute);
-
-// Category
 app.use("/category", categoryRoute);
-
-// Product
 app.use("/book", bookRoute);
+app.use("/order", orderRoute);
+
+//////////////////////////////////////////
 
 // not found
 app.use(notFound);

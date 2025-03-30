@@ -8,6 +8,7 @@ const {
   searchFilter,
   update,
   read,
+  updateStatus,
 } = require("../controllers/book-controller");
 const { adminCheck, authCheck } = require("../middlewares/auth-middleware");
 const upload = require("../utils/multerConfig");
@@ -21,5 +22,6 @@ router.get("/:id", read); // get book by id
 router.delete("/:id", remove); // delete product
 router.post("/product-by", listBy); // desc adsc
 router.post("/search/filters", searchFilter); // search
+router.patch("/:id", updateStatus);
 
 module.exports = router;

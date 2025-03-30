@@ -1,6 +1,6 @@
 const prisma = require("../configs/prismaClient");
 const multer = require("multer");
-const cloundinary = require('../utils/cloudinaryConfig')
+const cloundinary = require("../utils/cloudinaryConfig");
 
 exports.create = async (req, res) => {
   try {
@@ -114,6 +114,35 @@ exports.update = async (req, res) => {
   }
 };
 
+exports.updateStatus = async (req, res, next) => {
+  try {
+    const { stock } = req.body;
+    const bookId = Number(req.params.id);
+
+    const existingBook = await prisma.book.findUnique({
+      where: { id: bookId },
+    });
+
+    if (!existingBook) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    const status = stock === 0 ? "UNAVAILABLE" : "AVAILABLE";
+
+    const book = await prisma.book.update({
+      where: { id: bookId },
+      data: {
+        status,
+        stock, // ✅ อัปเดต stock ด้วยถ้าต้องการ
+      },
+    });
+
+    res.json({ message: "Updated book status successfully", book });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.remove = async (req, res) => {
   try {
     const { id } = req.params;
@@ -185,16 +214,18 @@ const handlePrice = async (req, res, priceRange) => {
   }
 };
 
-const handleCategory = async (req, res, categoryId) => {
+const handleCategory = async (req, res, categoryName) => {
   try {
-    const parsedCategoryId = Array.isArray(categoryId)
-      ? categoryId.map((id) => Number(id))
-      : [Number(categoryId)];
+    const parsedCategoryNames = Array.isArray(categoryName)
+      ? categoryName
+      : [categoryName.toLowerCase()];
 
     const books = await prisma.book.findMany({
       where: {
-        categoryId: {
-          in: parsedCategoryId,
+        category: {
+          name: {
+            in: parsedCategoryNames,
+          },
         },
       },
       include: {
@@ -203,9 +234,10 @@ const handleCategory = async (req, res, categoryId) => {
       },
     });
 
-    return books; // Return the results
+    return books;
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: "Error filtering by category name" });
   }
 };
 
